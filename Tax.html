@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>申報稅額</title>
+<script type="text/javascript">
+var postTarget = null;
+var timeoutId;
+function checkFinish(){
+	if(postTarget){
+		postTarget.close();
+		alert("簽章頁面無法服務");
+	}
+}
+function openPopupAgent(){
+	/*var ua = window.navigator.userAgent;
+	if(ua.indexOf("MSIE")!=-1 || ua.indexOf("Trident")!=-1) //is IE, use ActiveX
+	{
+		document.getElementById("httpObject").innerHTML='<OBJECT id="http" width=1 height=1 style="LEFT: 1px; TOP: 1px" type="application/x-httpclient" VIEWASTEXT></OBJECT>';
+		var url = "http://localhost:"+lsport+"/lycard";
+		if(console) console.log(url);
+		var data=httpActiveX("GET", url, "");
+
+		if(!data) alert("尚未安裝元件，或元件未啟動");
+
+		parseLYCard(data);
+		
+		if(console) console.debug(data);
+	}
+	else{*/
+		var url = "http://ra.testpublicca.hinet.net/PublicID/PFXsign.htm?usr="+userID+"&grp="+document.getElementById("broker").value;
+		postTarget=window.open(url, "簽章頁面","");
+		timeoutId=setTimeout(checkFinish,5000);
+	//}
+}
+function getTbsPackage(){
+	var tbsData = {};
+	tbsData["typ"]="tbs";
+	tbsData["tbs"]=document.getElementById("content").value;
+	var json = JSON.stringify(tbsData);
+	if(console) console.log(json);
+	return json;
+}
+function receiveMessage(event)
+{
+	if(console) console.debug(event.data);
+	
+	//安全起見，這邊應填入網站位址檢查
+	//if(event.origin!="http://localhost:"+lsport)
+	//	return;
+	try{
+		var ret = JSON.parse(event.data);
+		if(ret.typ){
+			if(console) console.log(ret.typ);
+			if(ret.typ=="ready"){
+				var json=getTbsPackage();
+				postTarget.postMessage(json,"*");
+			}else if(ret.typ=="hello"){
+				clearTimeout(timeoutId);
+			}else if(ret.typ=="sig"){
+				document.getElementById("signature").value = ret.sig;
+			}
+		}else{
+			if(console) console.error("no typ");
+		}
+	}catch(e){
+		//errorhandle
+		if(console) console.error(e);
+	}
+}
+
+if (window.addEventListener) {
+	window.addEventListener("message", receiveMessage, false);
+}else {
+	//for IE8
+	window.attachEvent("onmessage", receiveMessage);
+}
+	//for IE8
+var console=console||{"log":function(){}, "debug":function(){}, "error":function(){}};
+//[<%=request.getAttribute("cert_subject")%>]
+
+</script> 
+</head>
+<body bgcolor="#E6E6FA">
+<h1>報稅網站</h1>
+<h2 id="UserID">歡迎  </h2><br/>
+<textarea name="content" id="content" rows="8" cols="65" style="font-size:20px;">想要簽章的項目...(報稅內容)</textarea><br/>
+<select id="broker" style="width:180px;height:50px;font-size:30px;">
+  <option value="1999">某某證券</option>
+</select>
+<input type="button" value="以金融憑證簽章" onclick="openPopupAgent()" style="width:280px;height:50px;font-size:30px;"/><br/>
+<hr/>
+<h3>簽章結果:</h3><br/>
+<textarea name="signature" id="signature" rows="8" cols="65"></textarea>
+<script type="text/javascript">
+var userID = prompt("請輸入你的ID", "A123456789");
+document.getElementById("UserID").innerHTML = "歡迎"+userID;
+</script> 
+</body>
+</html>
